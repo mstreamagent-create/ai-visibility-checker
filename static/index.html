@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free check: is AI sending your customers to you, or to your competitor?</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:24px;background:#0f1115;color:#eee;line-height:1.5}
+  h1{font-size:1.5rem;line-height:1.3}
+  .card{background:#181b21;border:1px solid #2a2e36;border-radius:12px;padding:20px;margin-top:16px}
+  input{width:100%;box-sizing:border-box;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #3a3f4a;background:#0f1115;color:#eee;font-size:1rem}
+  button{width:100%;padding:14px;margin-top:10px;border-radius:8px;border:0;background:#4f7cff;color:#fff;font-size:1.05rem;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.6}
+  .result{margin-top:16px}
+  .bad{color:#ff7a7a;font-weight:700}
+  .good{color:#5adf8f;font-weight:700}
+  ol{margin:8px 0 0 18px;padding:0}
+  .cta{margin-top:18px;padding:14px;background:#1d2130;border-radius:10px;font-size:.95rem}
+  .muted{color:#9aa3b2;font-size:.9rem}
+</style>
+</head>
+<body>
+<h1>Free check: is AI sending your customers to you, or to your competitor?</h1>
+<p class="muted">Type your business name and your city, any language. In a few seconds you see exactly what ChatGPT-style AI answers when a customer asks for a business like yours, and whether your name is in that answer.</p>
+
+<div class="card">
+  <input id="business" placeholder="Your business name" autocomplete="off">
+  <input id="city" placeholder="Your city" autocomplete="off">
+  <input id="language" placeholder="Language (english, hindi, tamil, spanish…)" autocomplete="off">
+  <button id="go" onclick="runCheck()">Run my free check</button>
+</div>
+
+<div id="out" class="result"></div>
+
+<script>
+async function runCheck(){
+  const b=document.getElementById('business').value.trim();
+  const c=document.getElementById('city').value.trim();
+  const l=document.getElementById('language').value.trim()||'english';
+  const out=document.getElementById('out');
+  const btn=document.getElementById('go');
+  if(!b||!c){out.innerHTML='<p class="bad">Business name and city are required.</p>';return}
+  btn.disabled=true;out.innerHTML='<p>Checking what AI answers for your customers…</p>';
+  try{
+    const r=await fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({business:b,city:c,language:l})});
+    const d=await r.json();
+    if(!r.ok){out.innerHTML='<p class="bad">'+(d.error||'check failed, try again')+'</p>';btn.disabled=false;return}
+    let h='<div class="card">';
+    if(d.named){h+='<p class="good">✔ AI named you for "'+d.type+'" in '+d.city+'.</p>'}
+    else{h+='<p class="bad">✘ AI did NOT name you. When a customer asks for a '+d.type+' in '+d.city+', it recommends your competitors instead:</p>'}
+    h+='<ol>'+d.competitors.map(n=>'<li>'+n+'</li>').join('')+'</ol>';
+    h+='<div class="cta"><b>Every day you are invisible, those customers go to the businesses above.</b><br>Get the full AI-visibility report: how you rank on all major AI assistants, in your language, and exactly how to get named. From ₹199/month.</div>';
+    h+='</div>';
+    out.innerHTML=h;
+  }catch(e){out.innerHTML='<p class="bad">Network error, try again.</p>'}
+  btn.disabled=false;
+}
+</script>
+</body>
+</html>
